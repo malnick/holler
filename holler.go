@@ -1,7 +1,9 @@
 package holler
 
 import (
+	"io"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
@@ -9,10 +11,12 @@ import (
 
 // HollerProxy abstracts the Holler application
 type HollerProxy struct {
-	Backends map[string]*Backend
-	Port     string
-	Log      *logrus.Entry
-	Server   *http.Server
+	Backends  map[string]*Backend
+	Port      string
+	Log       *logrus.Entry
+	LogLevel  logrus.Level
+	LogOutput io.Writer
+	Server    *http.Server
 	sync.Mutex
 }
 
@@ -20,10 +24,12 @@ type HollerProxy struct {
 // functional options to override default configuration.
 func New(options ...Option) (*HollerProxy, error) {
 	defaultHoller := &HollerProxy{
-		Backends: make(map[string]*Backend),
-		Port:     ":9000",
-		Log:      logrus.WithFields(logrus.Fields{"holler": "default"}),
-		Server:   &http.Server{},
+		Backends:  make(map[string]*Backend),
+		Port:      ":9000",
+		Log:       logrus.WithFields(logrus.Fields{"holler": "default"}),
+		LogLevel:  logrus.DebugLevel,
+		LogOutput: os.Stdout,
+		Server:    &http.Server{},
 	}
 
 	for _, option := range options {

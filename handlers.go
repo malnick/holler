@@ -50,7 +50,7 @@ func registerBackendHandler(h *HollerProxy) http.HandlerFunc {
 		}
 
 		if r.Method == "DELETE" {
-			h.Log.Infof("deleting backend %s", backend.NamedRoute)
+			h.Log.Debugf("deleting backend %s", backend.NamedRoute)
 			if err := h.DeleteBackend(backend); err != nil {
 				h.Log.Error(err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -60,7 +60,7 @@ func registerBackendHandler(h *HollerProxy) http.HandlerFunc {
 			return
 		}
 
-		h.Log.Infof("registering new backend %s", backend.NamedRoute)
+		h.Log.Debugf("registering new backend %s", backend.NamedRoute)
 		if err := h.RegisterBackend(backend); err != nil {
 			h.Log.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)

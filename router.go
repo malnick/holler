@@ -54,7 +54,7 @@ func loadRoutes(router *mux.Router, h *HollerProxy) {
 	}
 
 	for _, r := range routes {
-		h.Log.Infof("establishing Hollar API endpoint %s at %s", r.Name, r.Path)
+		h.Log.Debugf("establishing Hollar API endpoint %s at %s", r.Name, r.Path)
 		var handler http.Handler
 
 		handler = r.HandlerFunc(h)

@@ -34,7 +34,7 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 	defer h.Unlock()
 
 	director := func(req *http.Request) {
-		h.Log.Infof("calling backend director for %s", b.NamedRoute)
+		h.Log.Debugf("calling backend director for %s", b.NamedRoute)
 		if len(b.Targets) == 0 {
 			h.Log.Errorf("targets for backend %s are empty, bailing out", b.NamedRoute)
 			return
@@ -48,7 +48,7 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 			return
 		}
 
-		h.Log.Infof("making backend request for %s:\n    Scheme %s\n    Host %s\n    Path %s", b.NamedRoute, targetURL.Scheme, targetURL.Host, targetURL.Path)
+		h.Log.Debugf("making backend request for %s:\n    Scheme %s\n    Host %s\n    Path %s", b.NamedRoute, targetURL.Scheme, targetURL.Host, targetURL.Path)
 		req.URL.Scheme = targetURL.Scheme
 		req.URL.Host = targetURL.Host
 		req.URL.Path = targetURL.Path
@@ -58,7 +58,7 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 		Director: director,
 		Transport: &http.Transport{
 			Proxy: func(req *http.Request) (*url.URL, error) {
-				h.Log.Infof("making backend request to %s", req.URL.Host)
+				h.Log.Debugf("making backend request to %s", req.URL.Host)
 				return http.ProxyFromEnvironment(req)
 			},
 		},
@@ -71,7 +71,7 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 	}
 
 	h.Backends[b.NamedRoute] = b
-	h.Log.Infof("establishing backend %s\n    Targets: %+v", b.NamedRoute, b.Targets)
+	h.Log.Debugf("establishing backend %s\n    Targets: %+v", b.NamedRoute, b.Targets)
 	h.Server.Handler.(*mux.Router).NewRoute().
 		Name(b.NamedRoute).
 		Path(b.NamedRoute).
@@ -94,7 +94,7 @@ func (h *HollerProxy) DeleteBackend(b *Backend) error {
 	h.Server.Handler = newRouter(h)
 
 	for n, b := range h.Backends {
-		h.Log.Infof("re-registering backend %s", n)
+		h.Log.Debugf("re-registering backend %s", n)
 		h.Server.Handler.(*mux.Router).NewRoute().
 			Name(b.NamedRoute).
 			Path(b.NamedRoute).
