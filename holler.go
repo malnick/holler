@@ -44,10 +44,15 @@ func New(options ...Option) (*HollerProxy, error) {
 // Start assumes that New() was called and HollerProxy has an initialized
 // *http.Server, and port setting.
 func (h *HollerProxy) Start() {
+	logrus.SetLevel(h.LogLevel)
+	logrus.SetOutput(h.LogOutput)
+
 	h.Server.Handler = newRouter(h)
 	h.Server.Addr = h.Port
 
 	h.Log.Info("starting holler on localhost" + h.Port)
+	go func() { h.HealthSupervisor() }()
+
 	h.Log.Error(h.Server.ListenAndServe())
 }
 

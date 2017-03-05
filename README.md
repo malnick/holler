@@ -13,7 +13,7 @@ cd ext && python -m SimpleHTTPServer 9001
 
 register new backend
 ```
-curl -XPOST -d'{"route": "/foo", "targets": ["http://localhost:9001"]}' localhost:9000/register/backend
+curl -XPOST -d @post.json localhost:9000/register/backend
 ```
 
 make a request to the backend via proxy/foo

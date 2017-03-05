@@ -2,7 +2,6 @@ package holler
 
 import (
 	"errors"
-	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -17,11 +16,18 @@ import (
 // TargetSelector can by one of: random, roundrobin.
 // If ProxyBuffer settings are nil, no buffering occurs.
 type Backend struct {
-	NamedRoute      string   `json:"route"`
-	ProxyBufferSize int      `json:"proxy_buffer_size,omitempty"`
-	TargetSelector  string   `json:"target_selector,omitempty"`
-	Targets         []string `json:"targets,omitempty"`
-	proxy           *httputil.ReverseProxy
+	NamedRoute          string    `json:"route"`
+	ProxyBufferSize     int       `json:"proxy_buffer_size,omitempty"`
+	TargetSelector      string    `json:"target_selector,omitempty"`
+	Targets             []*Target `json:"targets,omitempty"`
+	HealthCheckInterval int       `json:"health_check_interval,omitempty"`
+	proxy               *httputil.ReverseProxy
+}
+
+type Target struct {
+	URL         string `json:"url"`
+	Healthy     bool   `json:"health,omitempty"`
+	HealthRoute string `json:"health_route,omitempty"`
 }
 
 func (h *HollerProxy) RegisterBackend(b *Backend) error {
@@ -29,7 +35,10 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 		return errors.New("backend " + b.NamedRoute + " already registered, ignoring")
 	}
 
-	// Lock Holler before updating backend
+	if b.HealthCheckInterval == 0 {
+		b.HealthCheckInterval = 5
+	}
+
 	h.Lock()
 	defer h.Unlock()
 
@@ -41,8 +50,12 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 		}
 
 		// Need leastConn, roundRobin, etc
-		target := b.Targets[rand.Int()%len(b.Targets)]
-		targetURL, err := url.Parse(target)
+		target, err := b.SelectHealthy()
+		if err != nil {
+			h.Log.Error(err)
+			return
+		}
+		targetURL, err := url.Parse(target.URL)
 		if err != nil {
 			h.Log.Error(err)
 			return
@@ -104,6 +117,12 @@ func (h *HollerProxy) DeleteBackend(b *Backend) error {
 	return nil
 }
 
-type HollerHandler struct {
-	Routes []*mux.Route
+// Will hang if no targets are healthy
+func (b *Backend) SelectHealthy() (*Target, error) {
+	for _, t := range b.Targets {
+		if t.Healthy {
+			return t, nil
+		}
+	}
+	return nil, errors.New("no healthy targets")
 }

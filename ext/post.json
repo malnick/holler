@@ -1,0 +1,12 @@
+{"route": "/foo", 
+"targets": [
+		{
+			"url": "http://localhost:9001",
+			"health_route": "/"
+		}, 
+		{
+			"urL": "http://localhost:9002",
+			"health_route": "/"
+		}
+	]
+}
