@@ -1,5 +1,5 @@
 # Holler
-Holler is a HTTP/1/1.1/2 reverse proxy which supports dynamic backend registration.
+Holler is a HTTP/1/1.1/2 reverse proxy which supports dynamic backend registration
 
 ## Run 
 ```
@@ -26,5 +26,4 @@ curl localhost:9000/foo
 - HTTP/1/1.1 (MVP)
 - HTTP/2 (follow on work)
 - gRPC Proxy (stretch goal)
-
 
