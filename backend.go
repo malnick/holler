@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
+	"github.com/oxtoacart/bpool"
 )
 
 // Backend abstracts the configuration and targets for a backend
@@ -16,12 +17,11 @@ import (
 // TargetSelector can by one of: random, roundrobin.
 // If ProxyBuffer settings are nil, no buffering occurs.
 type Backend struct {
-	NamedRoute       string   `json:"route"`
-	ProxyBufferSize  int      `json:"proxy_buffer_size,omitempty"`
-	ProxyBufferAlloc int      `json:"proxy_buffer_alloc,omitempty"`
-	TargetSelector   string   `json:"target_selector,omitempty"`
-	Targets          []string `json:"targets,omitempty"`
-	proxy            *httputil.ReverseProxy
+	NamedRoute      string   `json:"route"`
+	ProxyBufferSize int      `json:"proxy_buffer_size,omitempty"`
+	TargetSelector  string   `json:"target_selector,omitempty"`
+	Targets         []string `json:"targets,omitempty"`
+	proxy           *httputil.ReverseProxy
 }
 
 func (h *HollerProxy) RegisterBackend(b *Backend) error {
@@ -74,6 +74,12 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 
 	if _, ok := h.Backends[b.NamedRoute]; ok {
 		return errors.New("backend " + b.NamedRoute + " already registered, ignoring")
+	}
+
+	// If ProxyBufferSize is set, allocate a new pool with max size and new size set to the
+	// configured size
+	if b.ProxyBufferSize != 0 {
+		b.proxy.BufferPool = bpool.NewBytePool(b.ProxyBufferSize, b.ProxyBufferSize)
 	}
 
 	h.Backends[b.NamedRoute] = b
