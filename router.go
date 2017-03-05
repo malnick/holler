@@ -10,13 +10,12 @@ import (
 )
 
 const (
-	registerPath   = "/register"
-	registeredPath = "/registered"
+	registerPath = "/register"
 )
 
 type route struct {
 	Name        string
-	Method      string
+	Method      []string
 	Path        string
 	HandlerFunc func(*HollerProxy) http.HandlerFunc
 }
@@ -34,22 +33,22 @@ func loadRoutes(router *mux.Router, h *HollerProxy) {
 	var routes = []route{
 		route{
 			Name:        "ping",
-			Method:      "GET",
+			Method:      []string{"GET"},
 			Path:        "/",
 			HandlerFunc: pingHandler,
 		},
 
 		route{
 			Name:        "/register/backend",
-			Method:      "POST",
+			Method:      []string{"POST, DELETE", "GET"},
 			Path:        strings.Join([]string{registerPath, "backend"}, "/"),
 			HandlerFunc: registerBackendHandler,
 		},
 
 		route{
 			Name:        "/registered/backends",
-			Method:      "GET",
-			Path:        strings.Join([]string{registeredPath, "backends"}, "/"),
+			Method:      []string{"GET"},
+			Path:        "/registered/backends",
 			HandlerFunc: registeredBackendsHandler,
 		},
 	}
@@ -62,10 +61,13 @@ func loadRoutes(router *mux.Router, h *HollerProxy) {
 		handler = logger(handler, r.Name, h.Log)
 
 		router.NewRoute().
-			Methods(r.Method).
 			Path(r.Path).
 			Name(r.Name).
 			Handler(handler)
+
+		//	for _, m := range r.Method {
+		//		router.Methods(m)
+		//	}
 	}
 }
 

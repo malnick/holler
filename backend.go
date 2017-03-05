@@ -25,6 +25,10 @@ type Backend struct {
 }
 
 func (h *HollerProxy) RegisterBackend(b *Backend) error {
+	if _, ok := h.Backends[b.NamedRoute]; ok {
+		return errors.New("backend " + b.NamedRoute + " already registered, ignoring")
+	}
+
 	// Lock Holler before updating backend
 	h.Lock()
 	defer h.Unlock()
@@ -57,23 +61,7 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 				h.Log.Infof("making backend request to %s", req.URL.Host)
 				return http.ProxyFromEnvironment(req)
 			},
-			//			Dial: func(network, addr string) (net.Conn, error) {
-			//				h.Log.Info("CALLING DIAL")
-			//				conn, err := (&net.Dialer{
-			//					Timeout:   30 * time.Second,
-			//					KeepAlive: 30 * time.Second,
-			//				}).Dial(network, addr)
-			//				if err != nil {
-			//					h.Log.Error("Error during DIAL:", err.Error())
-			//				}
-			//				return conn, err
-			//			},
-			//			TLSHandshakeTimeout: 10 * time.Second,
 		},
-	}
-
-	if _, ok := h.Backends[b.NamedRoute]; ok {
-		return errors.New("backend " + b.NamedRoute + " already registered, ignoring")
 	}
 
 	// If ProxyBufferSize is set, allocate a new pool with max size and new size set to the
@@ -97,7 +85,25 @@ func (h *HollerProxy) DeleteBackend(b *Backend) error {
 		return errors.New("unable to delete backend " + b.NamedRoute + " does not exist")
 	}
 
-	h.Log.Infof("deleteing backend %s", b.NamedRoute)
 	delete(h.Backends, b.NamedRoute)
+
+	// Gorilla mux doesn't have a way to delete a route in memory. At the risk of
+	// re-writting that library, here we're building a new http.Handler
+	// from our default API routes plus the updated backends with the
+	// desired backend deleted.
+	h.Server.Handler = newRouter(h)
+
+	for n, b := range h.Backends {
+		h.Log.Infof("re-registering backend %s", n)
+		h.Server.Handler.(*mux.Router).NewRoute().
+			Name(b.NamedRoute).
+			Path(b.NamedRoute).
+			Handler(b.proxy)
+	}
+
 	return nil
+}
+
+type HollerHandler struct {
+	Routes []*mux.Route
 }
