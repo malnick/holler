@@ -24,12 +24,19 @@ type Backend struct {
 	proxy               *httputil.ReverseProxy
 }
 
-type Target struct {
-	URL         string `json:"url"`
-	Healthy     bool   `json:"health,omitempty"`
-	HealthRoute string `json:"health_route,omitempty"`
+// SelectHealthy chooses a healthy target via RRD selection.
+func (b *Backend) SelectHealthy() (*Target, error) {
+	for _, t := range b.Targets {
+		if t.Healthy {
+			return t, nil
+		}
+	}
+	return nil, errors.New("no healthy targets")
 }
 
+/* HollerProxy methods specific to Backend{} manipulation */
+
+// RegisterBackend adds a new backend to Holler
 func (h *HollerProxy) RegisterBackend(b *Backend) error {
 	if _, ok := h.Backends[b.NamedRoute]; ok {
 		return errors.New("backend " + b.NamedRoute + " already registered, ignoring")
@@ -93,6 +100,11 @@ func (h *HollerProxy) RegisterBackend(b *Backend) error {
 	return nil
 }
 
+// DeleteBackend removes a backend from holler.
+// Note:
+//   Gorilla mux doesn't have a way to delete a route in memory. At the risk of
+//   re-writting that library, here we're building a new http.Handlerfrom our
+//   default API routes plus the updated backends with the desired backend deleted.
 func (h *HollerProxy) DeleteBackend(b *Backend) error {
 	if _, ok := h.Backends[b.NamedRoute]; !ok {
 		return errors.New("unable to delete backend " + b.NamedRoute + " does not exist")
@@ -100,10 +112,6 @@ func (h *HollerProxy) DeleteBackend(b *Backend) error {
 
 	delete(h.Backends, b.NamedRoute)
 
-	// Gorilla mux doesn't have a way to delete a route in memory. At the risk of
-	// re-writting that library, here we're building a new http.Handler
-	// from our default API routes plus the updated backends with the
-	// desired backend deleted.
 	h.Server.Handler = newRouter(h)
 
 	for n, b := range h.Backends {
@@ -115,14 +123,4 @@ func (h *HollerProxy) DeleteBackend(b *Backend) error {
 	}
 
 	return nil
-}
-
-// Will hang if no targets are healthy
-func (b *Backend) SelectHealthy() (*Target, error) {
-	for _, t := range b.Targets {
-		if t.Healthy {
-			return t, nil
-		}
-	}
-	return nil, errors.New("no healthy targets")
 }
