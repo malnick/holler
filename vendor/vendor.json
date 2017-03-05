@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
+			"revisionTime": "2016-08-29T20:23:21Z"
+		},
+		{
+			"checksumSHA1": "oDsOWp1nBMGpQ9gCFnczGADwZTE=",
+			"path": "github.com/gorilla/mux",
+			"revision": "0a192a193177452756c362c20087ddafcf6829c4",
+			"revisionTime": "2016-09-02T15:33:43Z"
+		},
+		{
+			"checksumSHA1": "u4rtURsE9Cn7TK4OPwH8axBMK6M=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "8d1157a435470616f975ff9bb013bea8d0962067",
+			"revisionTime": "2016-10-06T02:47:49Z"
+		}
+	],
+	"rootPath": "github.com/malnick/holler"
+}
